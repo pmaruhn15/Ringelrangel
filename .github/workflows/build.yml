@@ -1,76 +1,65 @@
-name: Build APK
+name: Build & Release APK
 
 on:
   push:
-    branches: ['*']
-  pull_request:
-    branches: ['*']
-
-permissions:
-  contents: write
+    branches: [ main, claude/* ]
+  workflow_dispatch:
 
 jobs:
-  build:
+  build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
 
-      - name: Generate Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.5
-          chmod +x gradlew
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
-      - name: Read version
-        id: version
-        run: |
-          source version.properties
-          echo "version=${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}" >> $GITHUB_OUTPUT
-          echo "build=${VERSION_BUILD}" >> $GITHUB_OUTPUT
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
-      - name: Build debug APK
-        run: ./gradlew assembleDebug
+    - name: Build Debug APK
+      run: ./gradlew assembleDebug
 
-      - name: Build release APK
-        run: ./gradlew assembleRelease
+    - name: Get version info
+      id: version
+      run: |
+        source version.properties
+        VERSION="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}-$(date +%Y%m%d)-$(echo ${{ github.sha }} | cut -c1-7)"
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=v$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Rename APKs
-        run: |
-          mkdir -p artifacts
-          cp app/build/outputs/apk/debug/app-debug.apk artifacts/ringelrangel-v${{ steps.version.outputs.version }}-debug.apk
-          cp app/build/outputs/apk/release/app-release-unsigned.apk artifacts/ringelrangel-v${{ steps.version.outputs.version }}-release.apk
+    - name: Rename APK
+      run: mv app/build/outputs/apk/debug/app-debug.apk ringelrangel-${{ steps.version.outputs.version }}.apk
 
-      - name: Upload APK artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ringelrangel-apk-v${{ steps.version.outputs.version }}
-          path: artifacts/*.apk
-          retention-days: 90
+    - name: Delete old releases
+      uses: dev-drprasad/delete-older-releases@v0.3.2
+      with:
+        keep_latest: 5
+        delete_tags: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Delete existing release for this version
-        if: github.event_name == 'push'
-        run: |
-          gh release delete "v${{ steps.version.outputs.version }}" --yes || true
-          git push origin :refs/tags/v${{ steps.version.outputs.version }} || true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Ringelrangel ${{ steps.version.outputs.version }}
+        tag_name: ${{ steps.version.outputs.tag }}
+        body: |
+          Automatischer Build von Commit ${{ github.sha }}
 
-      - name: Create Release
-        if: github.event_name == 'push'
-        run: |
-          gh release create "v${{ steps.version.outputs.version }}" \
-            artifacts/ringelrangel-v${{ steps.version.outputs.version }}-debug.apk \
-            artifacts/ringelrangel-v${{ steps.version.outputs.version }}-release.apk \
-            --title "Ringelrangel v${{ steps.version.outputs.version }}" \
-            --notes "Automatischer Build von Commit ${{ github.sha }}" \
-            --latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.event.head_commit.message }}
+        draft: false
+        prerelease: false
+        files: ringelrangel-*.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
