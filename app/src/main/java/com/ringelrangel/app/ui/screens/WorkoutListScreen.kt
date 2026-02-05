@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.ringelrangel.app.ui.screens
 
 import androidx.compose.animation.animateContentSize
@@ -13,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+
 import com.ringelrangel.app.data.Difficulty
 import com.ringelrangel.app.data.ExerciseRepository
 import com.ringelrangel.app.data.Workout
@@ -104,7 +107,7 @@ private fun WorkoutCard(workout: Workout) {
             }
 
             if (expanded) {
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
                 workout.exercises.forEachIndexed { index, we ->
                     WorkoutExerciseItem(index + 1, we)
                 }

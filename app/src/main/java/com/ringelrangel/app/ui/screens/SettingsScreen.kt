@@ -169,7 +169,7 @@ fun SettingsScreen() {
 
                                 if (isDownloading) {
                                     LinearProgressIndicator(
-                                        progress = { downloadProgress },
+                                        progress = downloadProgress,
                                         modifier = Modifier.fillMaxWidth(),
                                     )
                                     Text(
