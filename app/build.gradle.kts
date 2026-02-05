@@ -1,7 +1,20 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+val versionProps = Properties().apply {
+    val versionPropsFile = rootProject.file("version.properties")
+    if (versionPropsFile.exists()) {
+        load(versionPropsFile.inputStream())
+    }
+}
+val major = (versionProps["VERSION_MAJOR"] as? String)?.toIntOrNull() ?: 1
+val minor = (versionProps["VERSION_MINOR"] as? String)?.toIntOrNull() ?: 0
+val patch = (versionProps["VERSION_PATCH"] as? String)?.toIntOrNull() ?: 0
+val build = (versionProps["VERSION_BUILD"] as? String)?.toIntOrNull() ?: 1
 
 android {
     namespace = "com.ringelrangel.app"
@@ -11,16 +24,6 @@ android {
         applicationId = "com.ringelrangel.app"
         minSdk = 26
         targetSdk = 34
-
-        val versionPropsFile = rootProject.file("version.properties")
-        val versionProps = java.util.Properties()
-        if (versionPropsFile.exists()) {
-            versionProps.load(versionPropsFile.inputStream())
-        }
-        val major = (versionProps["VERSION_MAJOR"] as? String)?.toIntOrNull() ?: 1
-        val minor = (versionProps["VERSION_MINOR"] as? String)?.toIntOrNull() ?: 0
-        val patch = (versionProps["VERSION_PATCH"] as? String)?.toIntOrNull() ?: 0
-        val build = (versionProps["VERSION_BUILD"] as? String)?.toIntOrNull() ?: 1
 
         versionCode = major * 10000 + minor * 100 + patch
         versionName = "$major.$minor.$patch"
