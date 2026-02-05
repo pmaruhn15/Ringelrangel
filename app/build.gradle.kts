@@ -87,12 +87,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.6")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
 
-    // OkHttp for GitHub API calls (update check)
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
-
-    // JSON parsing
-    implementation("org.json:json:20231013")
-
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
